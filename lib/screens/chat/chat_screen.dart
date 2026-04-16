@@ -14,6 +14,28 @@ class ChatScreen extends StatefulWidget {
 class _ChatScreenState extends State<ChatScreen> {
   final List<ChatMessage> messages = [];
   final TextEditingController controller = TextEditingController();
+  final ScrollController scrollController = ScrollController();
+
+  bool isNearBottom() {
+    if (!scrollController.hasClients) return true;
+
+    final maxScroll = scrollController.position.maxScrollExtent;
+    final currentScroll = scrollController.position.pixels;
+
+    return (maxScroll - currentScroll) < 100;
+  }
+
+  void _scrollToBottom() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!scrollController.hasClients) return;
+
+      scrollController.animateTo(
+        scrollController.position.maxScrollExtent,
+        duration: const Duration(milliseconds: 250),
+        curve: Curves.easeOut,
+      );
+    });
+  }
 
   void sendMessage(String text) {
     if (text.trim().isEmpty) return;
@@ -30,6 +52,10 @@ class _ChatScreenState extends State<ChatScreen> {
     });
 
     controller.clear();
+
+    if (isNearBottom()) {
+      _scrollToBottom();
+    }
   }
 
   @override
@@ -40,7 +66,7 @@ class _ChatScreenState extends State<ChatScreen> {
         child: Column(
           children: [
             Expanded(
-              child: MessageList(messages: messages),
+              child: MessageList(messages: messages, scrollController: scrollController),
             ),
             ChatInput(
               controller: controller,
